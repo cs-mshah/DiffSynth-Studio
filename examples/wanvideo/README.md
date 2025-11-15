@@ -18,6 +18,12 @@ pip install -e .
 
 ## Quick Start
 
+Before training or inference, it is better to preprocess the videos using `examples/wanvideo/preprocess_data.py`.  
+
+```shell
+python examples/wanvideo/preprocess_data.py --input-folder data/sample --output-folder data/sample/preprocess --num-frames 81 --sampling uniform --resolution 832x480 --overwrite
+```
+
 You can quickly load the [Wan-AI/Wan2.1-T2V-1.3B](https://www.modelscope.cn/models/Wan-AI/Wan2.1-T2V-1.3B) model and run inference by executing the code below.
 
 ```python

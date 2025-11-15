@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-import os
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -69,9 +68,15 @@ def create_video_writer(
     return writer
 
 
-def index_stream(cap: cv2.VideoCapture, indices: List[int], writer: cv2.VideoWriter) -> int:
+def index_stream(
+    cap: cv2.VideoCapture,
+    indices: List[int],
+    writer: cv2.VideoWriter,
+    target_size: Optional[Tuple[int, int]] = None,
+) -> int:
     """
     Read frames from cap by zero-based indices (monotonically increasing) and write to writer.
+    If target_size is provided, frames are resized before writing.
     Returns number of frames written.
     """
     written = 0
@@ -86,6 +91,8 @@ def index_stream(cap: cv2.VideoCapture, indices: List[int], writer: cv2.VideoWri
     ok, frame = cap.read()
     while ok:
         if current_index == next_target:
+            if target_size is not None:
+                frame = cv2.resize(frame, target_size, interpolation=cv2.INTER_LINEAR)
             writer.write(frame)
             written += 1
             try:
@@ -101,6 +108,7 @@ def downsample_to_fps(
     input_path: Path,
     output_path: Path,
     target_fps: float,
+    target_resolution: Optional[Tuple[int, int]] = None,
 ) -> None:
     cap = open_video_reader(input_path)
     try:
@@ -114,12 +122,15 @@ def downsample_to_fps(
         if target_fps <= 0:
             raise ValueError("target_fps must be > 0")
 
+        # Determine output frame size
+        output_size = target_resolution if target_resolution is not None else (width, height)
+
         # If target_fps >= orig_fps, simply copy frames but write at orig_fps (no reduction needed)
         if target_fps >= orig_fps - 1e-6:
             frame_indices = list(range(total_frames))
-            writer = create_video_writer(output_path, orig_fps, (width, height))
+            writer = create_video_writer(output_path, orig_fps, output_size)
             try:
-                written = index_stream(cap, frame_indices, writer)
+                written = index_stream(cap, frame_indices, writer, target_resolution)
             finally:
                 writer.release()
             if written == 0:
@@ -134,9 +145,9 @@ def downsample_to_fps(
         if len(frame_indices) == 0:
             frame_indices = [0]
 
-        writer = create_video_writer(output_path, target_fps, (width, height))
+        writer = create_video_writer(output_path, target_fps, output_size)
         try:
-            written = index_stream(cap, frame_indices, writer)
+            written = index_stream(cap, frame_indices, writer, target_resolution)
         finally:
             writer.release()
         if written == 0:
@@ -150,6 +161,7 @@ def downsample_to_num_frames(
     output_path: Path,
     target_num_frames: int,
     sampling: str,
+    target_resolution: Optional[Tuple[int, int]] = None,
 ) -> None:
     cap = open_video_reader(input_path)
     try:
@@ -162,6 +174,9 @@ def downsample_to_num_frames(
         target_num_frames = int(target_num_frames)
         if target_num_frames <= 0:
             raise ValueError("target_num_frames must be > 0")
+
+        # Determine output frame size
+        output_size = target_resolution if target_resolution is not None else (width, height)
 
         if target_num_frames >= total_frames:
             # Nothing to reduce, copy as-is
@@ -184,15 +199,30 @@ def downsample_to_num_frames(
                 raise ValueError("sampling must be one of ['uniform', 'prefix']")
 
         # Write at original fps; duration may shorten if fewer frames are written (intentional).
-        writer = create_video_writer(output_path, orig_fps, (width, height))
+        writer = create_video_writer(output_path, orig_fps, output_size)
         try:
-            written = index_stream(cap, frame_indices, writer)
+            written = index_stream(cap, frame_indices, writer, target_resolution)
         finally:
             writer.release()
         if written == 0:
             raise RuntimeError(f"No frames written for {input_path}")
     finally:
         cap.release()
+
+
+def parse_resolution(resolution_str: str) -> Tuple[int, int]:
+    """Parse resolution string in format 'WIDTHxHEIGHT' (e.g., '512x512' or '1280x720')."""
+    try:
+        parts = resolution_str.lower().split("x")
+        if len(parts) != 2:
+            raise ValueError("Resolution must be in format WIDTHxHEIGHT (e.g., 512x512)")
+        width = int(parts[0])
+        height = int(parts[1])
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive integers")
+        return (width, height)
+    except ValueError as e:
+        raise ValueError(f"Invalid resolution format '{resolution_str}': {e}")
 
 
 def process_folder(
@@ -202,6 +232,7 @@ def process_folder(
     target_num_frames: Optional[int],
     sampling: str,
     overwrite: bool,
+    target_resolution: Optional[Tuple[int, int]] = None,
 ) -> None:
     videos = list_videos(input_folder)
     if not videos:
@@ -216,10 +247,10 @@ def process_folder(
             continue
         try:
             if target_fps is not None:
-                downsample_to_fps(video_path, out_path, float(target_fps))
+                downsample_to_fps(video_path, out_path, float(target_fps), target_resolution)
             else:
                 assert target_num_frames is not None
-                downsample_to_num_frames(video_path, out_path, int(target_num_frames), sampling)
+                downsample_to_num_frames(video_path, out_path, int(target_num_frames), sampling, target_resolution)
             print(f"Processed: {video_path.name} -> {out_path}")
         except Exception as e:
             print(f"Error processing {video_path}: {e}", file=sys.stderr)
@@ -230,7 +261,8 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Reduce the number of frames in all videos within a folder.\n"
             "- If --fps is provided, videos are reduced to target FPS (duration preserved approximately).\n"
-            "- If --num-frames is provided, videos are reduced by uniform or prefix sampling (duration may shorten)."
+            "- If --num-frames is provided, videos are reduced by uniform or prefix sampling (duration may shorten).\n"
+            "- Optionally resize videos to a target resolution using --resolution."
         )
     )
     parser.add_argument("--input-folder", type=Path, required=True, help="Folder containing input videos")
@@ -247,11 +279,24 @@ def parse_args() -> argparse.Namespace:
         choices=["uniform", "prefix"],
         help="Sampling strategy when using --num-frames",
     )
+    parser.add_argument(
+        "--resolution",
+        type=str,
+        default=None,
+        help="Target resolution in format WIDTHxHEIGHT (e.g., 512x512 or 1280x720). Optional.",
+    )
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing outputs")
 
     args = parser.parse_args()
     if not args.input_folder.exists() or not args.input_folder.is_dir():
         parser.error(f"--input-folder must be an existing directory: {args.input_folder}")
+    
+    # Parse resolution if provided
+    target_resolution = None
+    if args.resolution is not None:
+        target_resolution = parse_resolution(args.resolution)
+    
+    args.target_resolution = target_resolution
     return args
 
 
@@ -264,6 +309,7 @@ def main() -> None:
         target_num_frames=args.num_frames,
         sampling=args.sampling,
         overwrite=args.overwrite,
+        target_resolution=args.target_resolution,
     )
 
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH --job-name=wan-lora-infer
+#SBATCH --job-name=wan-infer-test
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=06:00:00
+#SBATCH --time=00:30:00
 #SBATCH --partition=GPU-shared
-#SBATCH --gpus=l40s-48:1
+#SBATCH --gpus=h100-80:1
 #SBATCH --mail-type=ALL
 
 # You can request at most 4 GPUs from one node in the GPU-shared partition.
@@ -26,7 +26,8 @@ echo "JOB_NAME: ${SLURM_JOB_NAME}"
 echo "LOG_DIR: $LOG_DIR"
 
 
-python examples/wanvideo/model_training/validate_lora/Wan2.1-VACE-1.3B.py
+# python examples/wanvideo/model_training/validate_lora/Wan2.1-VACE-1.3B.py
+python examples/wanvideo/model_inference/Wan2.1-VACE-1.3B.py
 
 # Construct log file names using SLURM environment variables
 OUTPUT_FILE="${SLURM_JOB_NAME}_${SLURM_JOB_ID}.out"

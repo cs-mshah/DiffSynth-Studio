@@ -218,6 +218,7 @@ __marimo__/
 
 # Diffsynth specific
 data/example_video_dataset
+data/sample
 models/Wan-AI
 models/train
 slurm/logs
