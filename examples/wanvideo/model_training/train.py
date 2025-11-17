@@ -1,7 +1,7 @@
 import torch, os, json
 from diffsynth import load_state_dict
 from diffsynth.pipelines.wan_video_new import WanVideoPipeline, ModelConfig
-from diffsynth.trainers.utils import DiffusionTrainingModule, ModelLogger, launch_training_task, wan_parser
+from diffsynth.trainers.utils import DiffusionTrainingModule, ModelLogger, launch_training_task, launch_data_process_task, wan_parser
 from diffsynth.trainers.unified_dataset import UnifiedDataset, LoadVideo, LoadAudio, ImageCropAndResize, ToAbsolutePath
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -84,8 +84,11 @@ class WanTrainingModule(DiffusionTrainingModule):
         return {**inputs_shared, **inputs_posi}
     
     
-    def forward(self, data, inputs=None):
-        if inputs is None: inputs = self.forward_preprocess(data)
+    def forward(self, data, inputs=None, return_inputs=False):
+        if inputs is None:
+            inputs = self.forward_preprocess(data)
+        if return_inputs:
+            return inputs
         models = {name: getattr(self.pipe, name) for name in self.pipe.in_iteration_models}
         loss = self.pipe.training_loss(**models, **inputs)
         return loss
@@ -133,4 +136,12 @@ if __name__ == "__main__":
         args.output_path,
         remove_prefix_in_ckpt=args.remove_prefix_in_ckpt
     )
-    launch_training_task(dataset, model, model_logger, args=args)
+    launcher_map = {
+        "sft": launch_training_task,
+        "data_process": launch_data_process_task,
+    }
+    if args.task not in launcher_map:
+        raise ValueError(f"Unsupported task: {args.task}")
+    
+    print(f"================ Launching task: {args.task} ================")
+    launcher_map[args.task](dataset, model, model_logger, args=args)
