@@ -18,6 +18,7 @@ class WanTrainingModule(DiffusionTrainingModule):
         extra_inputs=None,
         max_timestep_boundary=1.0,
         min_timestep_boundary=0.0,
+        masked_mse_lambda=0.0
     ):
         super().__init__()
         # Load models
@@ -39,6 +40,7 @@ class WanTrainingModule(DiffusionTrainingModule):
         self.extra_inputs = extra_inputs.split(",") if extra_inputs is not None else []
         self.max_timestep_boundary = max_timestep_boundary
         self.min_timestep_boundary = min_timestep_boundary
+        self.masked_mse_lambda = masked_mse_lambda
         
         
     def forward_preprocess(self, data):
@@ -90,7 +92,12 @@ class WanTrainingModule(DiffusionTrainingModule):
         if return_inputs:
             return inputs
         models = {name: getattr(self.pipe, name) for name in self.pipe.in_iteration_models}
-        loss = self.pipe.training_loss(**models, **inputs)
+        if self.masked_mse_lambda > 0.0:
+            inputs["masked_mse_lambda"] = self.masked_mse_lambda
+            loss = self.pipe.training_loss_masked(**models, **inputs)
+        else:
+            loss = self.pipe.training_loss(**models, **inputs)
+
         return loss
 
 
@@ -131,6 +138,7 @@ if __name__ == "__main__":
         extra_inputs=args.extra_inputs,
         max_timestep_boundary=args.max_timestep_boundary,
         min_timestep_boundary=args.min_timestep_boundary,
+        masked_mse_lambda=args.masked_mse_lambda
     )
     model_logger = ModelLogger(
         args.output_path,

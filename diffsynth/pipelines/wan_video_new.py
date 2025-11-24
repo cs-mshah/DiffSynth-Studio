@@ -124,6 +124,30 @@ class WanVideoPipeline(BasePipeline):
         loss = torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
         loss = loss * self.scheduler.training_weight(timestep)
         return loss
+    
+    def training_loss_masked(self, **inputs):
+        max_timestep_boundary = int(inputs.get("max_timestep_boundary", 1) * self.scheduler.num_train_timesteps)
+        min_timestep_boundary = int(inputs.get("min_timestep_boundary", 0) * self.scheduler.num_train_timesteps)
+        timestep_id = torch.randint(min_timestep_boundary, max_timestep_boundary, (1,))
+        timestep = self.scheduler.timesteps[timestep_id].to(dtype=self.torch_dtype, device=self.device)
+        
+        inputs["latents"] = self.scheduler.add_noise(inputs["input_latents"], inputs["noise"], timestep)
+        training_target = self.scheduler.training_target(inputs["input_latents"], inputs["noise"], timestep)
+        
+        noise_pred = self.model_fn(**inputs, timestep=timestep)
+        if "vace_mask_latents" in inputs:
+            lambda_val = inputs.get("masked_mse_lambda", 0.9)
+            # Shape: [Batch, 1, T, H, W] after mean
+            mask = inputs["vace_mask_latents"].mean(dim=1, keepdim=True)
+            background = 1 - mask
+            squared_error = (noise_pred.float() - training_target.float()) ** 2
+            L_masked = (squared_error * mask).sum() / (mask.sum() + 1e-6)
+            L_unmasked = (squared_error * background).sum() / (background.sum() + 1e-6)
+            loss = lambda_val * L_masked + (1.0 - lambda_val) * L_unmasked
+        else:
+            loss = torch.nn.functional.mse_loss(noise_pred.float(), training_target.float())
+        loss = loss * self.scheduler.training_weight(timestep)
+        return loss
 
 
     def enable_vram_management(self, num_persistent_param_in_dit=None, vram_limit=None, vram_buffer=0.5):
@@ -934,7 +958,7 @@ class WanVideoUnit_VACE(PipelineUnit):
                 vace_mask_latents = torch.concat((torch.zeros_like(vace_mask_latents[:, :, :f]), vace_mask_latents), dim=2)
             
             vace_context = torch.concat((vace_video_latents, vace_mask_latents), dim=1)
-            return {"vace_context": vace_context, "vace_scale": vace_scale}
+            return {"vace_context": vace_context, "vace_scale": vace_scale, "vace_mask_latents": vace_mask_latents}
         else:
             return {"vace_context": None, "vace_scale": vace_scale}
 

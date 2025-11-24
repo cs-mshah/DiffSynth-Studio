@@ -1,10 +1,13 @@
+DATA_FOLDER="data/car_example1/preprocess/Wan2.1-VACE-1.3B_lora/0"
+DATASET_REPEAT=14
+MASKED_LOSS_LAMBDA=0.9
+
 accelerate launch examples/wanvideo/model_training/train.py \
-  --dataset_base_path data/example_video_dataset \
-  --dataset_metadata_path data/example_video_dataset/metadata_vace.csv \
-  --data_file_keys "video,vace_video,vace_reference_image" \
+  --dataset_base_path "${DATA_FOLDER}" \
+  --data_file_keys "video,vace_video,vace_video_mask" \
   --height 480 \
   --width 832 \
-  --dataset_repeat 100 \
+  --dataset_repeat $DATASET_REPEAT \
   --model_id_with_origin_paths "Wan-AI/Wan2.1-VACE-1.3B:diffusion_pytorch_model*.safetensors,Wan-AI/Wan2.1-VACE-1.3B:models_t5_umt5-xxl-enc-bf16.pth,Wan-AI/Wan2.1-VACE-1.3B:Wan2.1_VAE.pth" \
   --learning_rate 1e-4 \
   --num_epochs 5 \
@@ -13,5 +16,6 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --lora_base_model "vace" \
   --lora_target_modules "q,k,v,o,ffn.0,ffn.2" \
   --lora_rank 32 \
-  --extra_inputs "vace_video,vace_reference_image" \
-  --use_gradient_checkpointing_offload
+  --extra_inputs "vace_video,vace_video_mask" \
+  --use_gradient_checkpointing_offload \
+  --masked_mse_lambda $MASKED_LOSS_LAMBDA

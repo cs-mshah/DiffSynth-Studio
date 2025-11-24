@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH --job-name=wan-lora-train
+#SBATCH --job-name=wan-lora-train-car1-masked-loss-0.9
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=06:00:00
+#SBATCH --time=08:00:00
 #SBATCH --partition=GPU-shared
 #SBATCH --gpus=l40s-48:1
 #SBATCH --mail-type=ALL
+#SBATCH --ntasks-per-node=4
 
 # You can request at most 4 GPUs from one node in the GPU-shared partition.
 # type: v100-16, v100-32, l40s-48, and h100-80
@@ -25,6 +26,10 @@ pwd
 echo "JOB_NAME: ${SLURM_JOB_NAME}"
 echo "LOG_DIR: $LOG_DIR"
 
+# latents caching
+# sh ./examples/wanvideo/model_training/lora/Wan2.1-VACE-1.3B-VLR-Preprocess.sh
+
+# echo "Finished preprocessing"
 
 sh ./examples/wanvideo/model_training/lora/Wan2.1-VACE-1.3B.sh
 

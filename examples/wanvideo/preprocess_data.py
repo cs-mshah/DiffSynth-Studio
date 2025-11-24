@@ -170,7 +170,7 @@ def downsample_to_num_frames(
             raise RuntimeError(f"Video has zero frames: {input_path}")
         if orig_fps <= 0:
             orig_fps = 30.0
-
+        print(f'{input_path} orig_fps: {orig_fps}')
         target_num_frames = int(target_num_frames)
         if target_num_frames <= 0:
             raise ValueError("target_num_frames must be > 0")

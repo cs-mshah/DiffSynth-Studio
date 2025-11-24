@@ -1,6 +1,8 @@
+DATA_FOLDER="data/car_example1/preprocess"
+
 accelerate launch examples/wanvideo/model_training/train.py \
-  --dataset_base_path data/example_video_dataset \
-  --dataset_metadata_path data/example_video_dataset/metadata_vace.csv \
+  --dataset_base_path "${DATA_FOLDER}" \
+  --dataset_metadata_path "${DATA_FOLDER}/metadata.csv" \
   --data_file_keys "video,vace_video,vace_video_mask" \
   --height 480 \
   --width 832 \
@@ -13,4 +15,4 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --extra_inputs "vace_video,vace_video_mask" \
   --use_gradient_checkpointing_offload \
   --task data_process  \
-  --output_path "./data/example_video_dataset/Wan2.1-VACE-1.3B_lora" \
+  --output_path "${DATA_FOLDER}/Wan2.1-VACE-1.3B_lora"

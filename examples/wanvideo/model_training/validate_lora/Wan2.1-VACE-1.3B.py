@@ -1,4 +1,6 @@
+import os
 import torch
+import numpy as np
 from PIL import Image
 from diffsynth import save_video, VideoData
 from diffsynth.pipelines.wan_video_new import WanVideoPipeline, ModelConfig
@@ -16,14 +18,31 @@ pipe = WanVideoPipeline.from_pretrained(
 pipe.load_lora(pipe.vace, "models/train/Wan2.1-VACE-1.3B_lora/epoch-4.safetensors", alpha=1)
 pipe.enable_vram_management()
 
-video = VideoData("data/example_video_dataset/video1_softedge.mp4", height=480, width=832)
-video = [video[i] for i in range(49)]
-reference_image = VideoData("data/example_video_dataset/video1.mp4", height=480, width=832)[0]
+# video = VideoData("data/example_video_dataset/video1_softedge.mp4", height=480, width=832)
+# video = [video[i] for i in range(49)]
+# reference_image = VideoData("data/example_video_dataset/video1.mp4", height=480, width=832)[0]
 
-video = pipe(
-    prompt="from sunset to night, a small town, light, house, river",
-    negative_prompt="色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
-    vace_video=video, vace_reference_image=reference_image, num_frames=49,
-    seed=1, tiled=True
-)
-save_video(video, "video_Wan2.1-VACE-1.3B.mp4", fps=15, quality=5)
+# video = pipe(
+#     prompt="from sunset to night, a small town, light, house, river",
+#     negative_prompt="色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+#     vace_video=video, vace_reference_image=reference_image, num_frames=49,
+#     seed=1, tiled=True
+# )
+# save_video(video, "video_Wan2.1-VACE-1.3B.mp4", fps=15, quality=5)
+np.random.seed(42)
+output_dir = "data/car_example1/outputs"
+os.makedirs(output_dir, exist_ok=True)
+num_inference = 5
+control_video = VideoData("data/car_example1/preprocess/vid1_vace_video.mp4", height=480, width=832)
+mask_video = VideoData("data/car_example1/preprocess/vid1_vace_video_mask.mp4", height=480, width=832)
+
+for i in range(num_inference):
+    seed = np.random.randint(1, 10000001)
+    video = pipe(
+        prompt='A small, red [V] toy car featuring a yellow ""45"" on the door, blue and yellow racing stripes, and a yellow smiley face on the back. The car is compact in size and placed in the center of a minimal, grey industrial studio with concrete walls and a reflective floor.',
+        negative_prompt="色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
+        vace_video=control_video,
+        vace_video_mask=mask_video,
+        seed=seed, tiled=True
+    )
+    save_video(video, f"data/car_example1/outputs/vid1_seed_{seed}.mp4", fps=24, quality=9)
