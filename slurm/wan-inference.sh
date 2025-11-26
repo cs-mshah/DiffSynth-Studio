@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH --job-name=wan-infer-car1-masked-loss-lambda-0.9
+#SBATCH --job-name=wan-infer-masked-loss-lambda-0.9-example3-5epochs_32_rank-target
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=01:00:00
 #SBATCH --partition=GPU-shared
-#SBATCH --gpus=l40s-48:1
+#SBATCH --gpus=h100-80:1
 #SBATCH --mail-type=ALL
 
 # You can request at most 4 GPUs from one node in the GPU-shared partition.

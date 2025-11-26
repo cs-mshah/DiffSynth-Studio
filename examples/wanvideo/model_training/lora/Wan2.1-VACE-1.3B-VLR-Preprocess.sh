@@ -1,4 +1,4 @@
-DATA_FOLDER="data/car_example1/preprocess"
+DATA_FOLDER="data/example3/preprocess"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
@@ -15,4 +15,4 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --extra_inputs "vace_video,vace_video_mask" \
   --use_gradient_checkpointing_offload \
   --task data_process  \
-  --output_path "${DATA_FOLDER}/Wan2.1-VACE-1.3B_lora"
+  --output_path "${DATA_FOLDER}/full_caption_cache"

@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH --job-name=wan-lora-train-car1-masked-loss-0.9
+#SBATCH --job-name=wan-lora-train-example3-5-epochs
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=08:00:00
+#SBATCH --time=02:00:00
 #SBATCH --partition=GPU-shared
-#SBATCH --gpus=l40s-48:1
+#SBATCH --gpus=h100-80:1
 #SBATCH --mail-type=ALL
 #SBATCH --ntasks-per-node=4
 
@@ -14,7 +14,7 @@
 # -n n Number of cores requested in total.
 # --ntasks-per-node=n # Request n cores be allocated per node.
 
-set -x
+# set -x
 
 module load anaconda3
 module load cuda
@@ -22,7 +22,7 @@ module load cuda
 source /jet/home/mshah10/miniconda3/etc/profile.d/conda.sh
 conda activate diffsynth
 
-pwd
+# pwd
 echo "JOB_NAME: ${SLURM_JOB_NAME}"
 echo "LOG_DIR: $LOG_DIR"
 

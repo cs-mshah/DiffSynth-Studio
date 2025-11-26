@@ -17,6 +17,7 @@ VIDEO_EXTENSIONS = {
     ".mpg",
     ".mpeg",
     ".m4v",
+    ".gif",  # Read support only, output will be MP4
 }
 
 
@@ -43,29 +44,64 @@ def get_video_meta(cap: cv2.VideoCapture) -> Tuple[int, float, int, int]:
     return total_frames, fps, width, height
 
 
-def pick_fourcc_for_extension(ext: str) -> int:
-    ext = ext.lower()
-    # Reasonable defaults; these are widely supported
-    if ext in {".mp4", ".m4v", ".mov"}:
-        return cv2.VideoWriter_fourcc(*"mp4v")
-    if ext in {".avi"}:
-        return cv2.VideoWriter_fourcc(*"XVID")
-    if ext in {".webm"}:
-        return cv2.VideoWriter_fourcc(*"VP90")
-    # Fallback
-    return cv2.VideoWriter_fourcc(*"mp4v")
-
-
 def create_video_writer(
     output_path: Path,
     fps: float,
     frame_size: Tuple[int, int],
 ) -> cv2.VideoWriter:
-    fourcc = pick_fourcc_for_extension(output_path.suffix)
+    """Create a video writer. Always uses MP4 format for output."""
+    # Always use MP4 format for output
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     writer = cv2.VideoWriter(str(output_path), fourcc, max(fps, 1e-6), frame_size)
     if not writer.isOpened():
         raise RuntimeError(f"Failed to open writer: {output_path}")
     return writer
+
+
+def resize_with_padding(
+    frame: np.ndarray,
+    target_size: Tuple[int, int],
+) -> np.ndarray:
+    """
+    Resize frame to target size while maintaining aspect ratio.
+    Pads with white pixels (255, 255, 255) to reach target size if needed.
+    
+    Args:
+        frame: Input frame (H, W, C) in BGR format
+        target_size: Target (width, height)
+    
+    Returns:
+        Resized and padded frame of size target_size
+    """
+    target_width, target_height = target_size
+    orig_height, orig_width = frame.shape[:2]
+    
+    # Calculate scale factor to fit within target while maintaining aspect ratio
+    scale = min(target_width / orig_width, target_height / orig_height)
+    
+    # Calculate new dimensions
+    new_width = int(round(orig_width * scale))
+    new_height = int(round(orig_height * scale))
+    
+    # Resize maintaining aspect ratio
+    resized = cv2.resize(frame, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+    
+    # Create white canvas of target size
+    if len(frame.shape) == 3:
+        # Color image (BGR)
+        canvas = np.ones((target_height, target_width, frame.shape[2]), dtype=frame.dtype) * 255
+    else:
+        # Grayscale
+        canvas = np.ones((target_height, target_width), dtype=frame.dtype) * 255
+    
+    # Calculate padding offsets to center the resized image
+    y_offset = (target_height - new_height) // 2
+    x_offset = (target_width - new_width) // 2
+    
+    # Place resized image on white canvas
+    canvas[y_offset:y_offset + new_height, x_offset:x_offset + new_width] = resized
+    
+    return canvas
 
 
 def index_stream(
@@ -76,7 +112,8 @@ def index_stream(
 ) -> int:
     """
     Read frames from cap by zero-based indices (monotonically increasing) and write to writer.
-    If target_size is provided, frames are resized before writing.
+    If target_size is provided, frames are resized while maintaining aspect ratio and padded
+    with white pixels to reach the target size.
     Returns number of frames written.
     """
     written = 0
@@ -92,7 +129,7 @@ def index_stream(
     while ok:
         if current_index == next_target:
             if target_size is not None:
-                frame = cv2.resize(frame, target_size, interpolation=cv2.INTER_LINEAR)
+                frame = resize_with_padding(frame, target_size)
             writer.write(frame)
             written += 1
             try:
@@ -241,7 +278,8 @@ def process_folder(
     safe_mkdir(output_folder)
 
     for video_path in videos:
-        out_path = output_folder / video_path.name
+        # Always output as MP4, regardless of input format
+        out_path = output_folder / (video_path.stem + ".mp4")
         if out_path.exists() and not overwrite:
             print(f"Skipping existing: {out_path}")
             continue

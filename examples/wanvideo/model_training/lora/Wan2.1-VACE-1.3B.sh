@@ -1,6 +1,7 @@
-DATA_FOLDER="data/car_example1/preprocess/Wan2.1-VACE-1.3B_lora/0"
-DATASET_REPEAT=14
+DATA_FOLDER="data/example3/preprocess/full_caption_cache/0"
+DATASET_REPEAT=16
 MASKED_LOSS_LAMBDA=0.9
+MODEL_OUTPUT_PATH="./models/train/Wan2.1-VACE-1.3B_lora/example3/5epochs"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
@@ -12,7 +13,7 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --learning_rate 1e-4 \
   --num_epochs 5 \
   --remove_prefix_in_ckpt "pipe.vace." \
-  --output_path "./models/train/Wan2.1-VACE-1.3B_lora" \
+  --output_path "${MODEL_OUTPUT_PATH}" \
   --lora_base_model "vace" \
   --lora_target_modules "q,k,v,o,ffn.0,ffn.2" \
   --lora_rank 32 \
