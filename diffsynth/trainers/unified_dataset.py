@@ -311,7 +311,9 @@ class UnifiedDataset(torch.utils.data.Dataset):
                     metadata.append(json.loads(line.strip()))
             self.data = metadata
         else:
-            metadata = pandas.read_csv(metadata_path)
+            # keep_default_na=False preserves empty strings like "" so prompts without text
+            # stay as empty strings rather than becoming NaN floats
+            metadata = pandas.read_csv(metadata_path, keep_default_na=False)
             self.data = [metadata.iloc[i].to_dict() for i in range(len(metadata))]
 
     def __getitem__(self, data_id):
