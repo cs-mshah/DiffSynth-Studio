@@ -57,10 +57,16 @@ class VaceWanModel(torch.nn.Module):
     ):
         c = [self.vace_patch_embedding(u.unsqueeze(0)) for u in vace_context]
         c = [u.flatten(2).transpose(1, 2) for u in c]
-        c = torch.cat([
-            torch.cat([u, u.new_zeros(1, x.shape[1] - u.size(1), u.size(2))],
-                      dim=1) for u in c
-        ])
+        seq_len = x.shape[1]
+        padded = []
+        for u in c:
+            if u.size(1) < seq_len:
+                pad = u.new_zeros(1, seq_len - u.size(1), u.size(2))
+                u = torch.cat([u, pad], dim=1)
+            elif u.size(1) > seq_len:
+                u = u[:, :seq_len, :]
+            padded.append(u)
+        c = torch.cat(padded, dim=0)
         
         def create_custom_forward(module):
             def custom_forward(*inputs):
