@@ -1,8 +1,8 @@
-DATA_FOLDER="data/example3/preprocess"
+DATA_FOLDER="data/example3/"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
-  --dataset_metadata_path "${DATA_FOLDER}/metadata.csv" \
+  --dataset_metadata_path "${DATA_FOLDER}/metadata_no_prompt.csv" \
   --data_file_keys "video,vace_video,vace_video_mask" \
   --height 480 \
   --width 832 \

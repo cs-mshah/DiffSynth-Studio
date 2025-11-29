@@ -1,7 +1,7 @@
-DATA_FOLDER="data/example3/preprocess/full_caption_cache/0"
+DATA_FOLDER="data/example3/full_caption_cache/0"
 DATASET_REPEAT=16
 MASKED_LOSS_LAMBDA=0.9
-MODEL_OUTPUT_PATH="./models/train/Wan2.1-VACE-1.3B_lora/example3/5epochs"
+MODEL_OUTPUT_PATH="./models/train/Wan2.1-VACE-1.3B_lora/example3/no_prompt/"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
