@@ -1,7 +1,8 @@
-DATA_FOLDER="data/example3/preprocess/full_caption_cache/0"
+DATA_FOLDER="data/example6/preprocess/ohwx_caption_cache/0"
 DATASET_REPEAT=16
+LORA_RANK=32
 MASKED_LOSS_LAMBDA=0.9
-MODEL_OUTPUT_PATH="./models/train/Wan2.1-VACE-1.3B_lora/example3/5epochs"
+MODEL_OUTPUT_PATH="./models/train/Wan2.1-VACE-1.3B_lora/example6/ohwx_caption"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
@@ -16,7 +17,7 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --output_path "${MODEL_OUTPUT_PATH}" \
   --lora_base_model "vace" \
   --lora_target_modules "q,k,v,o,ffn.0,ffn.2" \
-  --lora_rank 32 \
+  --lora_rank $LORA_RANK \
   --extra_inputs "vace_video,vace_video_mask" \
   --use_gradient_checkpointing_offload \
   --masked_mse_lambda $MASKED_LOSS_LAMBDA

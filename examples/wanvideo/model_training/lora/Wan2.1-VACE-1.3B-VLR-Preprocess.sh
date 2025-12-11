@@ -1,8 +1,10 @@
-DATA_FOLDER="data/example3/preprocess"
+DATA_FOLDER="data/example6/preprocess"
+METADATA_FILE="${DATA_FOLDER}/metadata.csv"
+OUTPUT_FOLDER="${DATA_FOLDER}/ohwx_caption_cache"
 
 accelerate launch examples/wanvideo/model_training/train.py \
   --dataset_base_path "${DATA_FOLDER}" \
-  --dataset_metadata_path "${DATA_FOLDER}/metadata.csv" \
+  --dataset_metadata_path "${METADATA_FILE}" \
   --data_file_keys "video,vace_video,vace_video_mask" \
   --height 480 \
   --width 832 \
@@ -14,5 +16,5 @@ accelerate launch examples/wanvideo/model_training/train.py \
   --lora_rank 32 \
   --extra_inputs "vace_video,vace_video_mask" \
   --use_gradient_checkpointing_offload \
-  --task data_process  \
-  --output_path "${DATA_FOLDER}/full_caption_cache"
+  --task data_process \
+  --output_path "${OUTPUT_FOLDER}"

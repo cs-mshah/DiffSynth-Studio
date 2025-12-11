@@ -49,4 +49,4 @@ for index, row in tqdm(df.iterrows()):
             vace_reference_image=reference_image,
             seed=seed, tiled=True
         )
-        save_video(video, f"{output_dir}/{row['video'].split('.')[0]}_seed_{seed}.mp4", fps=24, quality=9)
+        save_video(video, f"{output_dir}/{row['video'].split('.')[0]}_seed_{seed}.mp4", fps=20, quality=9)

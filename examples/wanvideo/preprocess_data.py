@@ -146,7 +146,7 @@ def downsample_to_fps(
     output_path: Path,
     target_fps: float,
     target_resolution: Optional[Tuple[int, int]] = None,
-) -> None:
+) -> Tuple[int, int]:
     cap = open_video_reader(input_path)
     try:
         total_frames, orig_fps, width, height = get_video_meta(cap)
@@ -172,7 +172,7 @@ def downsample_to_fps(
                 writer.release()
             if written == 0:
                 raise RuntimeError(f"No frames written for {input_path}")
-            return
+            return total_frames, written
 
         # Compute stride to approximately maintain duration when changing FPS.
         # Dropping frames by this stride and writing at target_fps keeps duration similar.
@@ -189,6 +189,7 @@ def downsample_to_fps(
             writer.release()
         if written == 0:
             raise RuntimeError(f"No frames written for {input_path}")
+        return total_frames, written
     finally:
         cap.release()
 
@@ -199,7 +200,7 @@ def downsample_to_num_frames(
     target_num_frames: int,
     sampling: str,
     target_resolution: Optional[Tuple[int, int]] = None,
-) -> None:
+) -> Tuple[int, int]:
     cap = open_video_reader(input_path)
     try:
         total_frames, orig_fps, width, height = get_video_meta(cap)
@@ -243,6 +244,7 @@ def downsample_to_num_frames(
             writer.release()
         if written == 0:
             raise RuntimeError(f"No frames written for {input_path}")
+        return total_frames, written
     finally:
         cap.release()
 
@@ -285,11 +287,11 @@ def process_folder(
             continue
         try:
             if target_fps is not None:
-                downsample_to_fps(video_path, out_path, float(target_fps), target_resolution)
+                initial_frames, output_frames = downsample_to_fps(video_path, out_path, float(target_fps), target_resolution)
             else:
                 assert target_num_frames is not None
-                downsample_to_num_frames(video_path, out_path, int(target_num_frames), sampling, target_resolution)
-            print(f"Processed: {video_path.name} -> {out_path}")
+                initial_frames, output_frames = downsample_to_num_frames(video_path, out_path, int(target_num_frames), sampling, target_resolution)
+            print(f"Processed: {video_path.name} -> {out_path} (frames: {initial_frames} -> {output_frames})")
         except Exception as e:
             print(f"Error processing {video_path}: {e}", file=sys.stderr)
 

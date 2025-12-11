@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH --job-name=wan-infer-masked-loss-lambda-0.9-example3-5epochs_32_rank-target
+#SBATCH --job-name=wan-infer-garden-ohwx-example5-trained
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 #SBATCH --partition=GPU-shared
 #SBATCH --gpus=h100-80:1
 #SBATCH --mail-type=ALL
@@ -21,7 +21,7 @@ module load cuda
 source /jet/home/mshah10/miniconda3/etc/profile.d/conda.sh
 conda activate diffsynth
 
-pwd
+# pwd
 echo "JOB_NAME: ${SLURM_JOB_NAME}"
 echo "LOG_DIR: $LOG_DIR"
 
