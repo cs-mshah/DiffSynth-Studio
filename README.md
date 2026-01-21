@@ -20,6 +20,15 @@ DiffSynth currently includes two open-source projects:
 
 [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio) and [DiffSynth-Engine](https://github.com/modelscope/DiffSynth-Engine) are the core projects behind ModelScope [AIGC zone](https://modelscope.cn/aigc/home), offering powerful AI content generation abilities. Come and try our carefully designed features and start your AI creation journey!
 
+## 16-824 Visual Learning & Recognition Course Project
+
+The code changes to the base `DiffSynth-Studio` are under `examples/wanvideo/`.  
+
+**Presentation Slides**: [Fine-grained Concept Learning in Videos
+](https://docs.google.com/presentation/d/10qkiVTtL_v7dHvqDiGDsrKCcHPqF3qjbhK1TmJ7JbYw/edit?usp=sharing)  
+
+**Project Report**: `VLR_Project_final_report.pdf`
+
 ## Installation
 
 Install from source (recommended):
